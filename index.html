@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iLibrary | Glass Management</title>
+    <style>
+        /* --- CUSTOMIZATION PANEL (Change these values) --- */
+        :root {
+            --glass-blur: 20px;
+            --glass-opacity: 0.25;
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --accent-color: #007AFF; /* iOS Blue */
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --text-main: #1d1d1f;
+            --card-radius: 22px;
+        }
+
+        /* Base Setup */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            width: 100vw;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Class */
+        .glass {
+            background: rgba(255, 255, 255, var(--glass-opacity));
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Login Interface */
+        #login-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .login-box {
+            width: 360px;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .login-box h1 { font-weight: 700; margin-bottom: 10px; }
+        .login-box p { font-size: 14px; margin-bottom: 30px; opacity: 0.7; }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.4);
+            outline: none;
+            font-size: 16px;
+        }
+
+        .ios-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .ios-btn:active { transform: scale(0.97); }
+
+        /* Main Dashboard (Hidden initially) */
+        #dashboard {
+            width: 95%;
+            height: 90%;
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 20px;
+            opacity: 0;
+            transform: scale(1.05);
+            transition: 0.8s ease;
+            pointer-events: none;
+        }
+
+        #dashboard.active {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            list-style: none;
+            font-weight: 500;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Content Area */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .header-bar {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            padding: 25px;
+            text-align: center;
+        }
+
+        .stat-card h2 { font-size: 32px; color: var(--accent-color); }
+
+        .table-container {
+            padding: 25px;
+            flex-grow: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th { text-align: left; opacity: 0.5; padding-bottom: 10px; font-weight: 500; }
+        td { padding: 15px 0; border-top: 1px solid var(--glass-border); }
+
+        .status {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .in { background: rgba(52, 199, 89, 0.2); color: #248a3d; }
+        .out { background: rgba(255, 59, 48, 0.2); color: #d72319; }
+
+        /* Hide classes */
+        .fade-out { opacity: 0; pointer-events: none; transform: scale(0.9) !important; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="glass login-box">
+            <h1>iLibrary</h1>
+            <p>Enter your credentials</p>
+            <input type="text" id="user" placeholder="Admin Username">
+            <input type="password" id="pass" placeholder="Password">
+            <button class="ios-btn" onclick="handleLogin()">Sign In</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <aside class="glass sidebar">
+            <h2 style="margin-bottom: 20px; padding-left: 15px;">Library</h2>
+            <li class="nav-item active">📊 Dashboard</li>
+            <li class="nav-item">📚 Books Catalog</li>
+            <li class="nav-item">👥 Members</li>
+            <li class="nav-item">🕒 Lending Log</li>
+            <li class="nav-item">⚙️ Settings</li>
+        </aside>
+
+        <main class="main-content">
+            <header class="glass header-bar">
+                <h2>Welcome Back, Librarian</h2>
+                <input type="text" placeholder="Search Inventory..." style="width: 250px; margin: 0;">
+            </header>
+
+            <div class="grid-stats">
+                <div class="glass stat-card">
+                    <p>Total Books</p>
+                    <h2>12,450</h2>
+                </div>
+                <div class="glass stat-card">
+                    <p>Active Loans</p>
+                    <h2>432</h2>
+                </div>
+                <div class="glass stat-card">
+                    <p>Overdue</p>
+                    <h2>18</h2>
+                </div>
+            </div>
+
+            <div class="glass table-container">
+                <h3>Recent Transactions</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Member</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>The Design of Everyday Things</td>
+                            <td>Alex Johnson</td>
+                            <td>Oct 24, 2023</td>
+                            <td><span class="status in">Returned</span></td>
+                        </tr>
+                        <tr>
+                            <td>Clean Code</td>
+                            <td>Sarah Smith</td>
+                            <td>Oct 25, 2023</td>
+                            <td><span class="status out">Borrowed</span></td>
+                        </tr>
+                        <tr>
+                            <td>Thinking, Fast and Slow</td>
+                            <td>Robert Brown</td>
+                            <td>Oct 26, 2023</td>
+                            <td><span class="status in">Returned</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function handleLogin() {
+            // Basic UI Transition
+            const login = document.getElementById('login-overlay');
+            const dash = document.getElementById('dashboard');
+
+            login.classList.add('fade-out');
+            
+            setTimeout(() => {
+                login.style.display = 'none';
+                dash.classList.add('active');
+            }, 600);
+        }
+
+        // Add "Enter" key listener for login
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+    </script>
+</body>
+</html>
